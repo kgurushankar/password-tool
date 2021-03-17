@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="Vaztic Login Password Hash Utility" content="Vaztic Login Password Hash Utility" />
+    <title>Vaztic Login Password Hash Utility</title>
+</head>
+<script>
+    async function sha256( message ) {
+        const msgBuffer = new TextEncoder().encode( message );
+        const hashBuffer = await crypto.subtle.digest( 'SHA-256', msgBuffer );
+        const hashArray = Array.from( new Uint8Array( hashBuffer ) );
+        const hashHex = hashArray.map( b => ( '00' + b.toString( 16 ) ).slice( -2 ) ).join( '' );
+        const hashB64 = btoa( hashHex.match( /\w{2}/g ).map( function ( a ) { return String.fromCharCode( parseInt( a, 16 ) ); } ).join( "" ) )
+        return hashB64;
+    }
+    async function updateHash() {
+        var pw = document.getElementById( "pw" ).value;
+        console.log( pw );
+        var hash = await sha256( pw );
+        document.getElementById( "hash" ).value = hash;
+    }
+</script>
+
+<body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root">
+        <label for="pw">Password:</label>
+        <input type="text" style="width:250px" id="pw" name="pw" onchange="updateHash()">
+        <input type="button" style="width:100px" id="generate" name="generate" onchange="updateHash()" value="Generate" >
+        <br><br>
+        <label for="hash">Hash:</label>
+        <input type="text" style="width:400px" id="hash" name="hash" disabled><br><br>
+    </div>
+</body>
+
+
+</html>
