@@ -4,83 +4,262 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="Login Password Hash Utility" content="Login Password Hash Utility" />
+    <meta name="theme-color" content="#203a43" />
+    <meta name="description" content="Login Password Hash Utility" />
     <title>Login Password Hash Utility</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+
+    <!-- Fonts and Bootstrap -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="bcrypt.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.25rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 450px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .form-control, .form-select {
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: rgba(255, 255, 255, 0.12);
+            border-color: #0dcaf0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 202, 240, 0.2);
+            color: #fff;
+        }
+        select option {
+            background-color: #203a43;
+            color: #fff;
+        }
+        .form-control[readonly] {
+            background-color: rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            padding-right: 3rem;
+            opacity: 1;
+        }
+        .form-control[readonly]:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        .btn-generate {
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4);
+            color: white;
+        }
+        .btn-generate:active {
+            transform: translateY(0);
+        }
+        .hash-wrapper {
+            position: relative;
+        }
+        .copy-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.5;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+        .hash-wrapper:hover .copy-icon {
+            opacity: 1;
+        }
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1055;
+        }
+    </style>
 </head>
-<script>
-    async function sha256(message) {
-        if (!message) return "";
-        const msgBuffer = new TextEncoder().encode(message);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
-        const hashB64 = btoa(hashHex.match(/\w{2}/g).map(function (a) { return String.fromCharCode(parseInt(a, 16)); }).join(""))
-        return hashB64;
-    }
-
-    async function getBcrypt(message) {
-        if (!message) return "";
-        return new Promise((resolve, reject) => {
-            bcrypt.hash(message, 14, function(err, hash) {
-                if (err) reject(err);
-                else resolve(hash);
-            });
-        });
-    }
-
-    async function updateHash() {
-        var pw = document.getElementById("pw").value;
-        var algo = document.getElementById("algo").value;
-        console.log(pw);
-
-        if (!pw) {
-            document.getElementById("hash").value = "";
-            return;
-        }
-
-        document.getElementById("hash").value = "Generating...";
-        
-        try {
-            var hash = "";
-            if (algo === "sha256") {
-                hash = await sha256(pw);
-            } else if (algo === "bcrypt") {
-                hash = await getBcrypt(pw);
-            }
-            document.getElementById("hash").value = hash;
-        } catch (e) {
-            document.getElementById("hash").value = "Error generating hash";
-            console.error(e);
-        }
-    }
-
-    window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const algo = urlParams.get('algo');
-        if (algo === 'sha256' || algo === 'bcrypt') {
-            document.getElementById("algo").value = algo;
-        }
-    }
-</script>
 
 <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root">
-        <label for="algo">Algorithm:</label>
-        <select id="algo" name="algo" onchange="updateHash()">
-            <option value="sha256">SHA-256</option>
-            <option value="bcrypt">Bcrypt</option>
-        </select>
-        <br><br>
-        <label for="pw">Password:</label>
-        <input type="text" style="width:250px" id="pw" name="pw" onkeyup="if(event.key === 'Enter') updateHash()">
-        <input type="button" style="width:100px" id="generate" name="generate" onclick="updateHash()" value="Generate">
-        <br><br>
-        <label for="hash">Hash:</label>
-        <input type="text" style="width:400px" id="hash" name="hash" disabled><br><br>
+    <div class="toast-container" id="toast-container"></div>
+    <div class="glass-card">
+        <h3 class="text-center mb-4 fw-semibold">Hash Generator</h3>
+        <form onsubmit="event.preventDefault(); updateHash();">
+            <div class="mb-3">
+                <label for="algo" class="form-label text-white-50">Algorithm</label>
+                <select class="form-select" id="algo" name="algo" onchange="updateHash()">
+                    <option value="sha256">SHA-256</option>
+                    <option value="bcrypt">Bcrypt</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label for="pw" class="form-label text-white-50">Password</label>
+                <input type="text" class="form-control" id="pw" name="pw" placeholder="Enter text to hash..." autocomplete="off">
+            </div>
+
+            <div class="d-grid mb-4">
+                <button type="button" class="btn btn-generate" onclick="updateHash()">Generate Hash</button>
+            </div>
+
+            <div class="mb-2">
+                <label for="hash" class="form-label text-white-50">Result</label>
+                <div class="hash-wrapper" onclick="copyToClipboard()">
+                    <input type="text" class="form-control" id="hash" name="hash" readonly placeholder="Output appears here...">
+                    <svg class="copy-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </div>
+                <small class="text-white-50 mt-1 d-block text-end">Click result to copy</small>
+            </div>
+        </form>
     </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        async function sha256(message) {
+            if (!message) return "";
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+            const hashB64 = btoa(hashHex.match(/\w{2}/g).map(function (a) { return String.fromCharCode(parseInt(a, 16)); }).join(""))
+            return hashB64;
+        }
+
+        async function getBcrypt(message) {
+            if (!message) return "";
+            return new Promise((resolve, reject) => {
+                var b = typeof dcodeIO !== 'undefined' ? dcodeIO.bcrypt : window.bcrypt;
+                b.hash(message, 14, function(err, hash) {
+                    if (err) reject(err);
+                    else resolve(hash);
+                });
+            });
+        }
+
+        async function updateHash() {
+            var pw = document.getElementById("pw").value;
+            var algo = document.getElementById("algo").value;
+            var hashInput = document.getElementById("hash");
+
+            if (!pw) {
+                hashInput.value = "";
+                return;
+            }
+
+            hashInput.value = "Generating...";
+
+            try {
+                var hash = "";
+                if (algo === "sha256") {
+                    hash = await sha256(pw);
+                } else if (algo === "bcrypt") {
+                    hash = await getBcrypt(pw);
+                }
+                hashInput.value = hash;
+            } catch (e) {
+                hashInput.value = "Error generating hash";
+                console.error(e);
+            }
+        }
+
+        function copyToClipboard() {
+            var hashInput = document.getElementById("hash");
+            if (!hashInput.value || hashInput.value === "Generating..." || hashInput.value.startsWith("Error")) return;
+
+            // Optional fallback for older browsers or non-secure contexts
+            if (!navigator.clipboard) {
+                hashInput.select();
+                try {
+                    document.execCommand('copy');
+                    showToast("Copied to clipboard!");
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                    showToast("Failed to copy!");
+                }
+                return;
+            }
+
+            navigator.clipboard.writeText(hashInput.value).then(function() {
+                showToast("Copied to clipboard!");
+                hashInput.select();
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+                showToast("Failed to copy!");
+            });
+        }
+
+        function showToast(message) {
+            const container = document.getElementById("toast-container");
+            const toastEl = document.createElement("div");
+            toastEl.className = "toast align-items-center text-bg-success border-0 show";
+            toastEl.setAttribute("role", "alert");
+            toastEl.setAttribute("aria-live", "assertive");
+            toastEl.setAttribute("aria-atomic", "true");
+
+            toastEl.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+
+            container.appendChild(toastEl);
+
+            // Auto remove after 2 seconds
+            setTimeout(() => {
+                toastEl.classList.remove("show");
+                setTimeout(() => toastEl.remove(), 300);
+            }, 2000);
+        }
+
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const algo = urlParams.get('algo');
+            if (algo === 'sha256' || algo === 'bcrypt') {
+                document.getElementById("algo").value = algo;
+            }
+
+            // Let hitting enter on password field trigger update
+            document.getElementById("pw").addEventListener("keyup", function(event) {
+                if (event.key === "Enter") {
+                    updateHash();
+                }
+            });
+        }
+    </script>
 </body>
 
 </html>
