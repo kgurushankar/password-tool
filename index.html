@@ -5,37 +5,82 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta name="Vaztic Login Password Hash Utility" content="Vaztic Login Password Hash Utility" />
-    <title>Vaztic Login Password Hash Utility</title>
+    <meta name="Login Password Hash Utility" content="Login Password Hash Utility" />
+    <title>Login Password Hash Utility</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
 </head>
 <script>
-    async function sha256( message ) {
-        const msgBuffer = new TextEncoder().encode( message );
-        const hashBuffer = await crypto.subtle.digest( 'SHA-256', msgBuffer );
-        const hashArray = Array.from( new Uint8Array( hashBuffer ) );
-        const hashHex = hashArray.map( b => ( '00' + b.toString( 16 ) ).slice( -2 ) ).join( '' );
-        const hashB64 = btoa( hashHex.match( /\w{2}/g ).map( function ( a ) { return String.fromCharCode( parseInt( a, 16 ) ); } ).join( "" ) )
+    async function sha256(message) {
+        if (!message) return "";
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+        const hashB64 = btoa(hashHex.match(/\w{2}/g).map(function (a) { return String.fromCharCode(parseInt(a, 16)); }).join(""))
         return hashB64;
     }
+
+    async function getBcrypt(message) {
+        if (!message) return "";
+        return new Promise((resolve, reject) => {
+            bcrypt.hash(message, 14, function(err, hash) {
+                if (err) reject(err);
+                else resolve(hash);
+            });
+        });
+    }
+
     async function updateHash() {
-        var pw = document.getElementById( "pw" ).value;
-        console.log( pw );
-        var hash = await sha256( pw );
-        document.getElementById( "hash" ).value = hash;
+        var pw = document.getElementById("pw").value;
+        var algo = document.getElementById("algo").value;
+        console.log(pw);
+
+        if (!pw) {
+            document.getElementById("hash").value = "";
+            return;
+        }
+
+        document.getElementById("hash").value = "Generating...";
+        
+        try {
+            var hash = "";
+            if (algo === "sha256") {
+                hash = await sha256(pw);
+            } else if (algo === "bcrypt") {
+                hash = await getBcrypt(pw);
+            }
+            document.getElementById("hash").value = hash;
+        } catch (e) {
+            document.getElementById("hash").value = "Error generating hash";
+            console.error(e);
+        }
+    }
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const algo = urlParams.get('algo');
+        if (algo === 'sha256' || algo === 'bcrypt') {
+            document.getElementById("algo").value = algo;
+        }
     }
 </script>
 
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root">
+        <label for="algo">Algorithm:</label>
+        <select id="algo" name="algo" onchange="updateHash()">
+            <option value="sha256">SHA-256</option>
+            <option value="bcrypt">Bcrypt</option>
+        </select>
+        <br><br>
         <label for="pw">Password:</label>
-        <input type="text" style="width:250px" id="pw" name="pw" onchange="updateHash()">
-        <input type="button" style="width:100px" id="generate" name="generate" onchange="updateHash()" value="Generate" >
+        <input type="text" style="width:250px" id="pw" name="pw" onkeyup="if(event.key === 'Enter') updateHash()">
+        <input type="button" style="width:100px" id="generate" name="generate" onclick="updateHash()" value="Generate">
         <br><br>
         <label for="hash">Hash:</label>
         <input type="text" style="width:400px" id="hash" name="hash" disabled><br><br>
     </div>
 </body>
-
 
 </html>
